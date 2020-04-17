@@ -2,13 +2,10 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from PIL import ImageTk, Image, ImageOps
 from tkinter import font
-import os
 import webbrowser
 import requests
 import win32api
 import threading
-import cgi
-import ctypes
 
 __author__ = 'Victor Santiago'
 __copyright__ = 'Copyright (C) 2020, Victor Santiago'
@@ -37,8 +34,8 @@ class Main:
                     mb1 = messagebox.askyesno('Update!', f'{_AppName_} {__version__} needs to update to version {data}')
                     if mb1 is True:
                         # -- Replace the url for your file online with the one below.
-                        webbrowser.open_new_tab('https://github.com/vsantiago113/Tkinter-MyTestApp/blob/'
-                                                'master/binaries/TestBinary.exe?raw=true')
+                        webbrowser.open_new_tab('https://github.com/vsantiago113/Tkinter-MyTestApp/raw/master/'
+                                                'updates/MyTestApp.msi?raw=true')
                         parent.destroy()
                     else:
                         pass
@@ -51,10 +48,10 @@ class Main:
             DisplayAboutMe(parent)
 
         def run_binary():
-            ctypes.windll.Shell32.ShellExecuteA(0, 'open', 'binaries/TestBinary.exe', None, None, 10)
+            win32api.ShellExecute(0, 'open', 'binaries\\TestBinary.exe', None, None, 10)
 
         def run_cmd():
-            ctypes.windll.Shell32.ShellExecuteA(0, 'open', 'cmd.exe', '/k ipconfig', None, 10)
+            win32api.ShellExecute(0, 'open', 'cmd.exe', '/k ipconfig', None, 10)
 
         def update_using_manager():
             try:
@@ -132,59 +129,32 @@ class UpdateManager(tk.Toplevel):
         label.image = photo
         label.pack()
 
-        def start_update_manager():
-            pass
-
-        ##            try:
-        ##                f = open(self.tempdir+'/'+self.appname,'wb')
-        ##                while True:
-        ##                    self.newdata = self.data.read(self.chunk)
-        ##                    if self.newdata:
-        ##                        f.write(self.newdata)
-        ##                        self.downloaded_data += self.newdata
-        ##                        self.progressbar['value'] = len(self.downloaded_data)
-        ##                    else:
-        ##                        break
-        ##            except Exception as e:
-        ##                messagebox.showerror('Error',str(e))
-        ##                self.destroy()
-        ##            else:
-        ##                f.close()
-        ##                self.button1.config(text='Install', state=tk.NORMAL)
-
         def install_update():
-            win32api.ShellExecute(0, 'open', self.tempdir + '/' + self.appname, None, None, 10)
+            win32api.ShellExecute(0, 'open', f'tmp\\{_AppName_}.msi', None, None, 10)
             parent.destroy()
 
-        self.data = requests.get(
-            'https://github.com/vsantiago113/Tkinter-MyTestApp/blob/master/binaries/TestBinary.exe?raw=true')
-        params = cgi.parse_header(self.data.headers.get('Content-Disposition', ''))
-        filename = params[-1].get('filename')
-        self.appname = _AppName_ + '.msi'
-        self.tempdir = './tmp'
-        self.chunk = 1048576
+        def start_update_manager():
+            with requests.get('https://github.com/vsantiago113/Tkinter-MyTestApp/raw/master/'
+                              'updates/MyTestApp.msi?raw=true', stream=True) as r:
+                self.progressbar['maximum'] = int(r.headers.get('Content-Length'))
+                r.raise_for_status()
+                with open(f'./tmp/{_AppName_}.msi', 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=4096):
+                        if chunk:  # filter out keep-alive new chunks
+                            f.write(chunk)
+                            self.progressbar['value'] += 4096
+            self.button1.config(text='Install', state=tk.NORMAL)
 
-        try:
-            self.data = self.data.content
-        except Exception as e:
-            messagebox.showerror('Error', str(e))
-            self.destroy()
-        else:
-            self.downloaded_data = ''
-            self.progressbar = ttk.Progressbar(self,
-                                               orient='horizontal',
-                                               length=200,
-                                               mode='determinate',
-                                               value=0,
-                                               # maximum=self.data.info().getheader('Content-Length').strip())len(data.read())
-                                               maximum=len(self.data))
-            self.progressbar.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-            self.button1 = ttk.Button(self, text='Wait!', state=tk.DISABLED, command=install_update)
-            self.button1.place(x=-83, relx=1.0, y=-33, rely=1.0)
-            if os.path.isfile(self.tempdir + '/' + self.appname):
-                os.remove(self.tempdir + '/' + self.appname)
-            else:
-                pass
+        self.progressbar = ttk.Progressbar(self,
+                                           orient='horizontal',
+                                           length=200,
+                                           mode='determinate',
+                                           value=0,
+                                           maximum=0)
+        self.progressbar.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        self.button1 = ttk.Button(self, text='Wait!', state=tk.DISABLED, command=install_update)
+        self.button1.place(x=-83, relx=1.0, y=-33, rely=1.0)
+
         self.t1 = threading.Thread(target=start_update_manager)
         self.t1.start()
 
