@@ -31,7 +31,7 @@ class Main:
 
                 if float(data) > float(__version__):
                     messagebox.showinfo('Software Update', 'Update Available!')
-                    mb1 = messagebox.askyesno('Update!', f'{_AppName_} {__version__} needs to update to version {data}')
+                    mb1 = messagebox.askyesno('Update!', f'{_AppName_} {__version__} needs to update to version {data}\n\nWould you like to update?')
                     if mb1 is True:
                         # -- Replace the url for your file online with the one below.
                         webbrowser.open_new_tab('https://github.com/vsantiago113/Tkinter-MyTestApp/raw/master/'
@@ -63,7 +63,7 @@ class Main:
 
                 if float(data) > float(__version__):
                     messagebox.showinfo('Software Update', 'Update Available!')
-                    mb2 = messagebox.askyesno('Update!', f'{_AppName_} {__version__} needs to update to version {data}')
+                    mb2 = messagebox.askyesno('Update!', f'{_AppName_} {__version__} needs to update to version {data}\n\nWould you like to update?')
                     if mb2 is True:
                         UpdateManager(parent)
                     elif mb2 == 'No':
